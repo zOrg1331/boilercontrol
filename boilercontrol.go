@@ -16,12 +16,12 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func boilerOnHandler(w http.ResponseWriter, r *http.Request) {
-	exec.Command("/usr/bin/boiler_on")
+	exec.Command("/usr/bin/boiler_on").Output()
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func boilerOffHandler(w http.ResponseWriter, r *http.Request) {
-	exec.Command("/usr/bin/boiler_off")
+	exec.Command("/usr/bin/boiler_off").Output()
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
