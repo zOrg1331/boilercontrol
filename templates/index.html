@@ -1,0 +1,26 @@
+{{define "index"}}
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <link rel="stylesheet" href="/static/bootstrap.min.css">
+        <link rel="stylesheet" type="text/css" href="/static/style.css">
+        <title>zHome controller</title>
+    </head>
+    <body>
+        <h1>boiler controller</h1>
+
+        <div>
+            <form action="/boiler/on" method="POST">
+                <button type="submit" class="btn btn-primary">Switch ON</button>
+            </form>
+        </div>
+        <div>
+            <form action="/boiler/off" method="POST">
+                <button type="submit" class="btn btn-primary">Switch OFF</button>
+            </form>
+        </div>
+    </body>
+</html>
+{{end}}
