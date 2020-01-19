@@ -1,11 +1,14 @@
 package main
 
 import (
+	"crypto/subtle"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os/exec"
 	"regexp"
+	"strings"
 )
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
@@ -33,8 +36,17 @@ func renderTemplate(w http.ResponseWriter, tmpl string) {
 
 var validPath = regexp.MustCompile("^(/|/static/[a-zA-Z0-9]+|/boiler/(on|off))$")
 
-func makeHandler(fn func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+func makeHandler(fn func(http.ResponseWriter, *http.Request), username string, password string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		userToCheck, passToCheck, ok := r.BasicAuth()
+
+		if !ok || subtle.ConstantTimeCompare([]byte(userToCheck), []byte(username)) != 1 || subtle.ConstantTimeCompare([]byte(passToCheck), []byte(password)) != 1 {
+			w.Header().Set("WWW-Authenticate", `Basic realm="zHome"`)
+			w.WriteHeader(401)
+			w.Write([]byte("Unauthorised.\n"))
+			return
+		}
+
 		m := validPath.FindStringSubmatch(r.URL.Path)
 		if m == nil {
 			http.NotFound(w, r)
@@ -45,10 +57,16 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
 }
 
 func main() {
+	authData, err := ioutil.ReadFile("./auth")
+	if err != nil {
+		panic(err)
+	}
+	creds := strings.Split(strings.TrimSuffix(string(authData), "\n"), ":")
+
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
-	http.HandleFunc("/", makeHandler(indexHandler))
-	http.HandleFunc("/boiler/on", makeHandler(boilerOnHandler))
-	http.HandleFunc("/boiler/off", makeHandler(boilerOffHandler))
+	http.HandleFunc("/", makeHandler(indexHandler, creds[0], creds[1]))
+	http.HandleFunc("/boiler/on", makeHandler(boilerOnHandler, creds[0], creds[1]))
+	http.HandleFunc("/boiler/off", makeHandler(boilerOffHandler, creds[0], creds[1]))
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
